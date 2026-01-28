@@ -59,6 +59,7 @@ go run main.go
   "system": {
     "hostname": "DESKTOP-ABC123",
     "platform": "windows",
+    "platform_version": "Windows-11-10.0.26200-SP0",
     "architecture": "amd64",
     "cpu_count": 8,
     "go_version": "go1.24.0"

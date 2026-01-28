@@ -19,11 +19,12 @@ type ServiceInfo struct {
 }
 
 type SystemInfo struct {
-	Hostname     string `json:"hostname"`
-	Platform     string `json:"platform"`
-	Architecture string `json:"architecture"`
-	CPUCount     int    `json:"cpu_count"`
-	GoVersion    string `json:"go_version"`
+	Hostname        string `json:"hostname"`
+	Platform        string `json:"platform"`
+	PlatformVersion string `json:"platform_version"`
+	Architecture    string `json:"architecture"`
+	CPUCount        int    `json:"cpu_count"`
+	GoVersion       string `json:"go_version"`
 }
 
 type RuntimeInfo struct {
@@ -51,7 +52,7 @@ type HomeResponse struct {
 	System    SystemInfo  `json:"system"`
 	Runtime   RuntimeInfo `json:"runtime"`
 	Request   RequestInfo `json:"request"`
-	Endpoints []Endpoint  `json:"endpoint"`
+	Endpoints []Endpoint  `json:"endpoints"`
 }
 
 type HealthResponse struct {
@@ -66,6 +67,10 @@ func getHostname() string {
 		return "unknown"
 	}
 	return hostname
+}
+
+func getPlatformVersion() string {
+	return fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
 }
 
 func getUptime() (int, string) {
@@ -90,11 +95,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 			Framework:   "net/http",
 		},
 		System: SystemInfo{
-			Hostname:     getHostname(),
-			Platform:     runtime.GOOS,
-			Architecture: runtime.GOARCH,
-			CPUCount:     runtime.NumCPU(),
-			GoVersion:    runtime.Version(),
+			Hostname:        getHostname(),
+			Platform:        runtime.GOOS,
+			PlatformVersion: getPlatformVersion(),
+			Architecture:    runtime.GOARCH,
+			CPUCount:        runtime.NumCPU(),
+			GoVersion:       runtime.Version(),
 		},
 		Runtime: RuntimeInfo{
 			UptimeSeconds: uptime_seconds,
@@ -129,7 +135,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	uptime_seconds, _ := getUptime()
 	response := HealthResponse{
-		Status:        "Healthy",
+		Status:        "healthy",
 		Timestamp:     time.Now().Format(time.RFC3339),
 		UptimeSeconds: uptime_seconds,
 	}
