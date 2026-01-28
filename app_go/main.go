@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -90,12 +91,17 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 	uptime_seconds, uptime_human := getUptime()
 
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+
 	response := HomeResponse{
 		Service: ServiceInfo{
 			Name:        "devops-info-service",
 			Version:     "1.0.0",
 			Description: "DevOps course info service",
-			Framework:   "net/http",
+			Framework:   "Go net/http",
 		},
 		System: SystemInfo{
 			Hostname:        getHostname(),
@@ -112,7 +118,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 			Timezone:      "UTC",
 		},
 		Request: RequestInfo{
-			ClientIP:  r.RemoteAddr,
+			ClientIP:  host,
 			UserAgent: r.UserAgent(),
 			Method:    r.Method,
 			Path:      r.URL.Path,

@@ -13,6 +13,9 @@ devops-info-service
 # Test binary
 *.test
 
+# Logs
+*.log
+
 # Go coverage
 *.out
 coverage.html

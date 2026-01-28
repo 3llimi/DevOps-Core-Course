@@ -54,12 +54,12 @@ go run main.go
     "name": "devops-info-service",
     "version": "1.0.0",
     "description": "DevOps course info service",
-    "framework": "net/http"
+    "framework": "Go net/http"
   },
   "system": {
     "hostname": "DESKTOP-ABC123",
     "platform": "windows",
-    "platform_version": "Windows-11-10.0.26200-SP0",
+    "platform_version": "windows-amd64",
     "architecture": "amd64",
     "cpu_count": 8,
     "go_version": "go1.24.0"
@@ -71,7 +71,7 @@ go run main.go
     "timezone": "UTC"
   },
   "request": {
-    "client_ip": "127.0.0.1:54321",
+    "client_ip": "::1",
     "user_agent": "Mozilla/5.0",
     "method": "GET",
     "path": "/"
