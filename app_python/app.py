@@ -1,17 +1,31 @@
 from fastapi import FastAPI, Request
 from datetime import datetime, timezone
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import platform
 import socket
 import os
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log"),
+    ],
+)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 START_TIME = datetime.now(timezone.utc)
 
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
+
+logger.info(f"Application starting - Host: {HOST}, Port: {PORT}")
 
 
 def get_uptime():
@@ -22,8 +36,57 @@ def get_uptime():
     return {"seconds": secs, "human": f"{hrs} hours, {mins} minutes"}
 
 
+@app.on_event("startup")
+async def startup_event():
+    logger.info("FastAPI application startup complete")
+    logger.info(f"Python version: {platform.python_version()}")
+    logger.info(f"Platform: {platform.system()} {platform.platform()}")
+    logger.info(f"Hostname: {socket.gethostname()}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    uptime = get_uptime()
+    logger.info(f"Application shutting down. Total uptime: {uptime['human']}")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = datetime.now(timezone.utc)
+    client_ip = request.client.host if request.client else "unknown"
+
+    logger.info(
+        f"Request started: {request.method} {request.url.path} "
+        f"from {client_ip}"
+    )
+
+    try:
+        response = await call_next(request)
+        process_time = (
+            datetime.now(timezone.utc) - start_time
+        ).total_seconds()
+
+        logger.info(
+            f"Request completed: {request.method} {request.url.path} - "
+            f"Status: {response.status_code} - Duration: {process_time:.3f}s"
+        )
+
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    except Exception as e:
+        process_time = (
+            datetime.now(timezone.utc) - start_time
+        ).total_seconds()
+        logger.error(
+            f"Request failed: {request.method} {request.url.path} - "
+            f"Error: {str(e)} - Duration: {process_time:.3f}s"
+        )
+        raise
+
+
 @app.get("/")
 def home(request: Request):
+    logger.debug("Home endpoint called")
     uptime = get_uptime()
     return {
         "service": {
@@ -69,6 +132,7 @@ def home(request: Request):
 
 @app.get("/health")
 def health():
+    logger.debug("Health check endpoint called")
     uptime = get_uptime()
     return {
         "status": "healthy",
@@ -76,30 +140,46 @@ def health():
         "uptime_seconds": uptime["seconds"],
     }
 
+
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+):
+    client = request.client.host if request.client else "unknown"
+    logger.warning(
+        f"HTTP exception: {exc.status_code} - {exc.detail} - "
+        f"Path: {request.url.path} - Client: {client}"
+    )
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "error": exc.detail,
             "status_code": exc.status_code,
-            "path": request.url.path
-        }
+            "path": request.url.path,
+        },
     )
 
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
+    client = request.client.host if request.client else "unknown"
+    logger.error(
+        f"Unhandled exception: {type(exc).__name__} - {str(exc)} - "
+        f"Path: {request.url.path} - Client: {client}",
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=500,
         content={
             "error": "Internal Server Error",
             "message": "An unexpected error occurred",
-            "path": request.url.path
-        }
+            "path": request.url.path,
+        },
     )
+
 
 if __name__ == "__main__":
     import uvicorn
 
+    logger.info(f"Starting Uvicorn server on {HOST}:{PORT}")
     uvicorn.run(app, host=HOST, port=PORT)

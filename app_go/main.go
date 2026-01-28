@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -82,9 +83,11 @@ func getUptime() (int, string) {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
+		log.Printf("404 Not Found: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		http.NotFound(w, r)
 		return
 	}
+	log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 	uptime_seconds, uptime_human := getUptime()
 
 	response := HomeResponse{
@@ -129,19 +132,28 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding JSON response: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Health check: %s from %s", r.Method, r.RemoteAddr)
 	uptime_seconds, _ := getUptime()
 	response := HealthResponse{
 		Status:        "healthy",
-		Timestamp:     time.Now().Format(time.RFC3339),
+		Timestamp:     time.Now().UTC().Format(time.RFC3339), // Add .UTC()
 		UptimeSeconds: uptime_seconds,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding JSON response: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
@@ -152,10 +164,11 @@ func main() {
 
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/health", healthHandler)
-	fmt.Printf("Starting DevOps Info Service on :%s\n", port)
+	log.Printf("Starting DevOps Info Service on :%s", port)
+	log.Printf("Go version: %s", runtime.Version())
+	log.Printf("Platform: %s-%s", runtime.GOOS, runtime.GOARCH)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
-		os.Exit(1)
+		log.Fatalf("Error starting server: %s", err)
 	}
 }

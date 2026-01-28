@@ -85,6 +85,34 @@ All endpoints return structured JSON with consistent formatting.
 
 ---
 
+### 6. Comprehensive Logging
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+logger.info(f"Application starting - Host: {HOST}, Port: {PORT}")
+```
+
+**Why it matters:** Essential for debugging production issues and monitoring application behavior.
+
+### 7. Error Handling
+```python
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {type(exc).__name__}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error"}
+    )
+```
+
+**Why it matters:** Prevents application crashes and provides meaningful error messages to clients.
+
 ## API Documentation
 
 ### Endpoint: GET `/`
