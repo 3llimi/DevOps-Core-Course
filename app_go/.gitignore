@@ -1,0 +1,41 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+devops-info-service
+
+# Build output
+/bin/
+/build/
+
+# Test binary
+*.test
+
+# Logs
+*.log
+
+# Go coverage
+*.out
+coverage.html
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependency directories (if using vendor)
+/vendor/
+
+# Debug files
+__debug_bin*
