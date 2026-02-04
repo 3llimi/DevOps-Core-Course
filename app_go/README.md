@@ -98,3 +98,31 @@ go run main.go
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | Server port |
+
+## Docker
+
+### Build the Multi-Stage Image
+
+```bash
+docker build -t 3llimi/devops-go-service:latest .
+```
+
+### Run the Container
+
+```bash
+docker run -p 8080:8080 3llimi/devops-go-service:latest
+```
+
+### Pull from Docker Hub
+
+```bash
+docker pull 3llimi/devops-go-service:latest
+docker run -p 8080:8080 3llimi/devops-go-service:latest
+```
+
+### Image Size
+
+- **Compressed size:** ~15 MB (what users download)
+- **Uncompressed size:** 29.8 MB (disk usage)
+- **Without multi-stage:** ~800 MB
+- **Size reduction:** 97.7%
