@@ -141,19 +141,83 @@ curl http://localhost:8000/health
 
 ```
 app_python/
-├── app.py              # Main application
-├── requirements.txt    # Dependencies
+├── app.py             # Main application
+├── requirements.txt   # Dependencies
 ├── .gitignore         # Git ignore rules
+├── .dockerignore      # Dockerignore rules
+├── Dockerfile         # Dockerfile
 ├── README.md          # This file
 ├── tests/             # Unit tests
 │   └── __init__.py
 └── docs/
-    ├── LAB01.md       # Lab submission
-    └── screenshots/   # Proof of work
+    ├── LAB01.md 
+    ├── LAB02.md      # Lab submission
+    └── screenshots/
 ```
+
+## Docker
+
+### Building the Image Locally
+
+```bash
+# Build the image
+docker build -t 3llimi/devops-info-service:latest .
+
+# Check image size
+docker images 3llimi/devops-info-service
+```
+
+### Running with Docker
+
+```bash
+# Run with default settings (port 8000)
+docker run -p 8000:8000 3llimi/devops-info-service:latest
+
+# Run with custom port mapping
+docker run -p 3000:8000 3llimi/devops-info-service:latest
+
+# Run with environment variables
+docker run -p 5000:5000 -e PORT=5000 3llimi/devops-info-service:latest
+
+# Run in detached mode
+docker run -d -p 8000:8000 --name devops-service 3llimi/devops-info-service:latest
+```
+
+### Pulling from Docker Hub
+
+```bash
+# Pull the image
+docker pull 3llimi/devops-info-service:latest
+
+# Run the pulled image
+docker run -p 8000:8000 3llimi/devops-info-service:latest
+```
+
+### Testing the Containerized Application
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Main endpoint
+curl http://localhost:8000/
+
+# View logs (if running in detached mode)
+docker logs devops-service
+
+# Stop container
+docker stop devops-service
+docker rm devops-service
+```
+
+### Docker Hub Repository
+
+**Image:** `3llimi/devops-info-service:latest`  
+**Registry:** https://hub.docker.com/r/3llimi/devops-info-service
 
 ## Tech Stack
 
 - **Language:** Python 3.14
 - **Framework:** FastAPI 0.115.0
 - **Server:** Uvicorn 0.32.0
+- **Containerization:** Docker 29.2.0
