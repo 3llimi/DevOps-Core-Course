@@ -1,0 +1,38 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+devops-info-service
+devops-info-service.exe
+
+# Test binaries
+*.test
+
+# Coverage files
+*.out
+
+# Go workspace
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+README.md
+docs/
+
+# Tests (if you have them)
+*_test.go
