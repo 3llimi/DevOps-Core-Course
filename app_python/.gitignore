@@ -1,17 +1,31 @@
 # Python
 __pycache__/
 *.py[cod]
-*$.py.class
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
 *.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
 venv/
+.venv/
 env/
-.env
+ENV/
+virtualenv/
 
-# Logs
-*.log
-app.log
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
 
-#IDE
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -21,7 +35,10 @@ app.log
 .DS_Store
 Thumbs.db
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+app.log
