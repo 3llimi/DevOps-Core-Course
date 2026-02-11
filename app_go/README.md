@@ -1,5 +1,5 @@
 [![Go CI](https://github.com/3llimi/DevOps-Core-Course/workflows/Go%20CI/badge.svg)](https://github.com/3llimi/DevOps-Core-Course/actions/workflows/go-ci.yml)
-
+[![Coverage Status](https://coveralls.io/repos/github/3llimi/DevOps-Core-Course/badge.svg?branch=lab03)](https://coveralls.io/github/3llimi/DevOps-Core-Course?branch=lab03)
 # DevOps Info Service (Go)
 
 A Go implementation of the DevOps info service for the bonus task.
