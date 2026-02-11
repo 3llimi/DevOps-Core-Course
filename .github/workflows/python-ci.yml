@@ -65,7 +65,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/devops-info-service
-          tages: |
+          tags: |
             type= raw, value=latest
             type=sha,prefix={{date 'YYY.MM.DD'}}-
       
@@ -76,7 +76,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-form: type=gha
+          cache-from: type=gha
           cache-to: type=gha,mode=max
   security:
     name: Security Scan
