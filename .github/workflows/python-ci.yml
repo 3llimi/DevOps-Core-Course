@@ -39,10 +39,18 @@ jobs:
           pip install ruff
           ruff check . --output-format=github || true
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: ./app_python
         run: |
-          pytest -v --cov=. --cov-report=term --cov-report=xml
+          pytest -v --cov=. --cov-report=term --cov-report=lcov
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./app_python/coverage.lcov
+          flag-name: python
+          parallel: false
 
   docker:
     name: Build and Push Docker Image
