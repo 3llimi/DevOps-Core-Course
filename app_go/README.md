@@ -1,3 +1,5 @@
+[![Go CI](https://github.com/3llimi/DevOps-Core-Course/workflows/Go%20CI/badge.svg)](https://github.com/3llimi/DevOps-Core-Course/actions/workflows/go-ci.yml)
+
 # DevOps Info Service (Go)
 
 A Go implementation of the DevOps info service for the bonus task.
