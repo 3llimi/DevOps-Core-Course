@@ -82,7 +82,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   security:
-    name: Security Scan
+    name: Security Scan with Snyk
     runs-on: ubuntu-latest
     
     steps:
@@ -99,11 +99,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/python@master
-        continue-on-error: true
+
+      - name: Install Snyk CLI
+        run: |
+          curl --compressed https://static.snyk.io/cli/latest/snyk-linux -o snyk
+          chmod +x ./snyk
+          sudo mv ./snyk /usr/local/bin/snyk
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --file=app_python/requirements.txt
+
+      - name: Run Snyk to check for vulnerabilities
+        working-directory: ./app_python
+        continue-on-error: true
+        run: |
+          snyk test --severity-threshold=high --file=requirements.txt
