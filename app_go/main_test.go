@@ -7,10 +7,20 @@ import (
 	"testing"
 )
 
-func TestHomeEndpoint(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+// Test helper function to create test server
+func setupTestRequest(method, path string) (*http.Request, *httptest.ResponseRecorder) {
+	req := httptest.NewRequest(method, path, nil)
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
+	return req, w
+}
 
+// ============================================
+// Tests for GET / endpoint
+// ============================================
+
+func TestHomeEndpoint(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/")
 	homeHandler(w, req)
 
 	if w.Code != http.StatusOK {
@@ -19,10 +29,13 @@ func TestHomeEndpoint(t *testing.T) {
 }
 
 func TestHomeReturnsJSON(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-
+	req, w := setupTestRequest(http.MethodGet, "/")
 	homeHandler(w, req)
+
+	contentType := w.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
+	}
 
 	var response HomeResponse
 	err := json.NewDecoder(w.Body).Decode(&response)
@@ -32,9 +45,7 @@ func TestHomeReturnsJSON(t *testing.T) {
 }
 
 func TestHomeHasServiceInfo(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-
+	req, w := setupTestRequest(http.MethodGet, "/")
 	homeHandler(w, req)
 
 	var response HomeResponse
@@ -49,12 +60,13 @@ func TestHomeHasServiceInfo(t *testing.T) {
 	if response.Service.Framework != "Go net/http" {
 		t.Errorf("expected framework 'Go net/http', got '%s'", response.Service.Framework)
 	}
+	if response.Service.Description != "DevOps course info service" {
+		t.Errorf("expected description 'DevOps course info service', got '%s'", response.Service.Description)
+	}
 }
 
 func TestHomeHasSystemInfo(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-
+	req, w := setupTestRequest(http.MethodGet, "/")
 	homeHandler(w, req)
 
 	var response HomeResponse
@@ -69,12 +81,78 @@ func TestHomeHasSystemInfo(t *testing.T) {
 	if response.System.GoVersion == "" {
 		t.Error("go_version should not be empty")
 	}
+	if response.System.CPUCount <= 0 {
+		t.Errorf("cpu_count should be positive, got %d", response.System.CPUCount)
+	}
 }
 
-func TestHealthEndpoint(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
+func TestHomeHasRuntimeInfo(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/")
+	homeHandler(w, req)
 
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Runtime.UptimeSeconds < 0 {
+		t.Errorf("uptime_seconds should be non-negative, got %d", response.Runtime.UptimeSeconds)
+	}
+	if response.Runtime.CurrentTime == "" {
+		t.Error("current_time should not be empty")
+	}
+	if response.Runtime.Timezone != "UTC" {
+		t.Errorf("expected timezone 'UTC', got '%s'", response.Runtime.Timezone)
+	}
+}
+
+func TestHomeHasRequestInfo(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/")
+	homeHandler(w, req)
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Request.Method != "GET" {
+		t.Errorf("expected method 'GET', got '%s'", response.Request.Method)
+	}
+	if response.Request.Path != "/" {
+		t.Errorf("expected path '/', got '%s'", response.Request.Path)
+	}
+	if response.Request.UserAgent != "test-client/1.0" {
+		t.Errorf("expected user agent 'test-client/1.0', got '%s'", response.Request.UserAgent)
+	}
+}
+
+func TestHomeHasEndpoints(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/")
+	homeHandler(w, req)
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if len(response.Endpoints) != 2 {
+		t.Errorf("expected 2 endpoints, got %d", len(response.Endpoints))
+	}
+
+	// Check first endpoint
+	if response.Endpoints[0].Path != "/" {
+		t.Errorf("expected first endpoint path '/', got '%s'", response.Endpoints[0].Path)
+	}
+	if response.Endpoints[0].Method != "GET" {
+		t.Errorf("expected first endpoint method 'GET', got '%s'", response.Endpoints[0].Method)
+	}
+
+	// Check second endpoint
+	if response.Endpoints[1].Path != "/health" {
+		t.Errorf("expected second endpoint path '/health', got '%s'", response.Endpoints[1].Path)
+	}
+}
+
+// ============================================
+// Tests for GET /health endpoint
+// ============================================
+
+func TestHealthEndpoint(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/health")
 	healthHandler(w, req)
 
 	if w.Code != http.StatusOK {
@@ -83,10 +161,13 @@ func TestHealthEndpoint(t *testing.T) {
 }
 
 func TestHealthReturnsJSON(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-
+	req, w := setupTestRequest(http.MethodGet, "/health")
 	healthHandler(w, req)
+
+	contentType := w.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
+	}
 
 	var response HealthResponse
 	err := json.NewDecoder(w.Body).Decode(&response)
@@ -96,9 +177,7 @@ func TestHealthReturnsJSON(t *testing.T) {
 }
 
 func TestHealthHasStatus(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-
+	req, w := setupTestRequest(http.MethodGet, "/health")
 	healthHandler(w, req)
 
 	var response HealthResponse
@@ -109,10 +188,20 @@ func TestHealthHasStatus(t *testing.T) {
 	}
 }
 
-func TestHealthHasUptime(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
+func TestHealthHasTimestamp(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/health")
+	healthHandler(w, req)
 
+	var response HealthResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Timestamp == "" {
+		t.Error("timestamp should not be empty")
+	}
+}
+
+func TestHealthHasUptime(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/health")
 	healthHandler(w, req)
 
 	var response HealthResponse
@@ -123,13 +212,124 @@ func TestHealthHasUptime(t *testing.T) {
 	}
 }
 
-func Test404Handler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
-	w := httptest.NewRecorder()
+// ============================================
+// Tests for 404 handler
+// ============================================
 
+func Test404Handler(t *testing.T) {
+	req, w := setupTestRequest(http.MethodGet, "/nonexistent")
 	homeHandler(w, req)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status 404, got %d", w.Code)
+	}
+}
+
+func Test404OnInvalidPath(t *testing.T) {
+	invalidPaths := []string{"/api", "/test", "/favicon.ico", "/robots.txt"}
+
+	for _, path := range invalidPaths {
+		req, w := setupTestRequest(http.MethodGet, path)
+		homeHandler(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected 404 for path '%s', got %d", path, w.Code)
+		}
+	}
+}
+
+// ============================================
+// Tests for helper functions
+// ============================================
+
+func TestGetHostname(t *testing.T) {
+	hostname := getHostname()
+	if hostname == "" {
+		t.Error("hostname should not be empty")
+	}
+	// Should never return "unknown" in normal conditions
+	if hostname == "unknown" {
+		t.Log("Warning: hostname returned 'unknown'")
+	}
+}
+
+func TestGetPlatformVersion(t *testing.T) {
+	platformVersion := getPlatformVersion()
+	if platformVersion == "" {
+		t.Error("platform version should not be empty")
+	}
+	// Should contain a hyphen (e.g., "linux-amd64")
+	if len(platformVersion) < 3 {
+		t.Errorf("platform version seems invalid: '%s'", platformVersion)
+	}
+}
+
+func TestGetUptime(t *testing.T) {
+	seconds, human := getUptime()
+
+	if seconds < 0 {
+		t.Errorf("uptime seconds should be non-negative, got %d", seconds)
+	}
+
+	if human == "" {
+		t.Error("uptime human format should not be empty")
+	}
+
+	// Human format should contain "hours" and "minutes"
+	// (even if 0 hours, 0 minutes)
+	if len(human) < 10 {
+		t.Errorf("uptime human format seems too short: '%s'", human)
+	}
+}
+
+// ============================================
+// Edge case and error handling tests
+// ============================================
+
+func TestHomeHandlerWithPOSTMethod(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	w := httptest.NewRecorder()
+
+	homeHandler(w, req)
+
+	// Should still return 200 (handler doesn't restrict methods)
+	// But this documents the behavior
+	if w.Code != http.StatusOK {
+		t.Logf("POST to / returned status %d", w.Code)
+	}
+}
+
+func TestHealthHandlerWithPOSTMethod(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/health", nil)
+	w := httptest.NewRecorder()
+
+	healthHandler(w, req)
+
+	// Should still return 200 (handler doesn't restrict methods)
+	if w.Code != http.StatusOK {
+		t.Logf("POST to /health returned status %d", w.Code)
+	}
+}
+
+func TestResponseContentTypeIsJSON(t *testing.T) {
+	endpoints := []struct {
+		path    string
+		handler http.HandlerFunc
+	}{
+		{"/", homeHandler},
+		{"/health", healthHandler},
+	}
+
+	for _, endpoint := range endpoints {
+		req := httptest.NewRequest(http.MethodGet, endpoint.path, nil)
+		w := httptest.NewRecorder()
+
+		endpoint.handler(w, req)
+
+		contentType := w.Header().Get("Content-Type")
+		if contentType != "application/json" {
+			t.Errorf("endpoint %s: expected Content-Type 'application/json', got '%s'",
+				endpoint.path, contentType)
+		}
 	}
 }
