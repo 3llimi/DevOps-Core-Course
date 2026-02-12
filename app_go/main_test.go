@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // Test helper function to create test server
@@ -331,5 +332,205 @@ func TestResponseContentTypeIsJSON(t *testing.T) {
 			t.Errorf("endpoint %s: expected Content-Type 'application/json', got '%s'",
 				endpoint.path, contentType)
 		}
+	}
+}
+
+// Test for malformed RemoteAddr (covers net.SplitHostPort error path)
+func TestHomeHandlerWithMalformedRemoteAddr(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	// Set an invalid RemoteAddr without port
+	req.RemoteAddr = "192.168.1.1"
+	w := httptest.NewRecorder()
+
+	homeHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	// Should still work and use the full RemoteAddr as client IP
+	if response.Request.ClientIP != "192.168.1.1" {
+		t.Errorf("expected client IP '192.168.1.1', got '%s'", response.Request.ClientIP)
+	}
+}
+
+// Test with empty RemoteAddr
+func TestHomeHandlerWithEmptyRemoteAddr(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = ""
+	w := httptest.NewRecorder()
+
+	homeHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	// Should handle empty RemoteAddr gracefully
+	if response.Request.ClientIP != "" {
+		t.Logf("Empty RemoteAddr resulted in client IP: '%s'", response.Request.ClientIP)
+	}
+}
+
+// Test with IPv6 address
+func TestHomeHandlerWithIPv6RemoteAddr(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "[::1]:12345"
+	w := httptest.NewRecorder()
+
+	homeHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Request.ClientIP != "::1" {
+		t.Errorf("expected client IP '::1', got '%s'", response.Request.ClientIP)
+	}
+}
+
+// Test empty User-Agent
+func TestHomeHandlerWithEmptyUserAgent(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Del("User-Agent")
+	w := httptest.NewRecorder()
+
+	homeHandler(w, req)
+
+	var response HomeResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Request.UserAgent != "" {
+		t.Logf("Empty User-Agent resulted in: '%s'", response.Request.UserAgent)
+	}
+}
+
+// Test uptime calculation over time
+func TestGetUptimeProgression(t *testing.T) {
+	seconds1, human1 := getUptime()
+
+	// Wait a tiny bit
+	time.Sleep(10 * time.Millisecond)
+
+	seconds2, human2 := getUptime()
+
+	if seconds2 < seconds1 {
+		t.Error("uptime should not decrease")
+	}
+
+	// Both should be non-empty
+	if human1 == "" || human2 == "" {
+		t.Error("uptime human format should not be empty")
+	}
+}
+
+// Test uptime formatting with specific durations
+func TestUptimeFormatting(t *testing.T) {
+	// This indirectly tests the uptime formatting logic
+	seconds, human := getUptime()
+
+	// Human should contain "hours" and "minutes"
+	if !contains(human, "hours") || !contains(human, "minutes") {
+		t.Errorf("uptime format should contain 'hours' and 'minutes', got: '%s'", human)
+	}
+
+	// Seconds should match reasonable expectations
+	if seconds < 0 {
+		t.Errorf("seconds should be non-negative, got %d", seconds)
+	}
+}
+
+// Helper function for string contains check
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) &&
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
+			containsHelper(s, substr)))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
+// Test different HTTP methods on health endpoint
+func TestHealthHandlerWithDifferentMethods(t *testing.T) {
+	methods := []string{
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodDelete,
+		http.MethodPatch,
+	}
+
+	for _, method := range methods {
+		req := httptest.NewRequest(method, "/health", nil)
+		w := httptest.NewRecorder()
+
+		healthHandler(w, req)
+
+		// All methods should succeed (no method restriction in handler)
+		if w.Code != http.StatusOK {
+			t.Errorf("method %s: expected status 200, got %d", method, w.Code)
+		}
+	}
+}
+
+// Test concurrent requests to ensure no race conditions
+func TestConcurrentHomeRequests(t *testing.T) {
+	const numRequests = 100
+	done := make(chan bool, numRequests)
+
+	for i := 0; i < numRequests; i++ {
+		go func() {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			w := httptest.NewRecorder()
+			homeHandler(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("concurrent request failed with status %d", w.Code)
+			}
+			done <- true
+		}()
+	}
+
+	// Wait for all requests to complete
+	for i := 0; i < numRequests; i++ {
+		<-done
+	}
+}
+
+// Test concurrent health checks
+func TestConcurrentHealthRequests(t *testing.T) {
+	const numRequests = 100
+	done := make(chan bool, numRequests)
+
+	for i := 0; i < numRequests; i++ {
+		go func() {
+			req := httptest.NewRequest(http.MethodGet, "/health", nil)
+			w := httptest.NewRecorder()
+			healthHandler(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("concurrent health check failed with status %d", w.Code)
+			}
+			done <- true
+		}()
+	}
+
+	for i := 0; i < numRequests; i++ {
+		<-done
 	}
 }
