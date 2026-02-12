@@ -1,0 +1,23 @@
+name: Coveralls Finish
+
+on:
+  workflow_run:
+    workflows:
+      - Go CI
+      - Python CI
+    types:
+      - completed
+    branches:
+      - master
+      - lab03
+
+jobs:
+  finish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Finish Coveralls parallel build
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true

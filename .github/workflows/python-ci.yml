@@ -50,7 +50,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ./app_python/coverage.lcov
           flag-name: python
-          parallel: false
+          parallel: true
 
   docker:
     name: Build and Push Docker Image
