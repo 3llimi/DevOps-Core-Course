@@ -1,3 +1,5 @@
+[![Python CI](https://github.com/3llimi/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg)](https://github.com/3llimi/DevOps-Core-Course/actions/workflows/python-ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/3llimi/DevOps-Core-Course/badge.svg?branch=lab03)](https://coveralls.io/github/3llimi/DevOps-Core-Course?branch=lab03)
 # DevOps Info Service
 
 A Python web service that provides system and runtime information. Built with FastAPI for the DevOps Core Course.

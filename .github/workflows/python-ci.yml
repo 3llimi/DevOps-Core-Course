@@ -1,0 +1,126 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ master, lab03 ]
+    paths:
+      - 'app_python/**'
+      - '.github/workflows/python-ci.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'app_python/**'
+
+jobs:
+  test:
+    name: Test Python Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: 'app_python/requirements-dev.txt'
+
+      - name: Install dependencies
+        working-directory: ./app_python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint with ruff
+        working-directory: ./app_python
+        run: |
+          pip install ruff
+          ruff check . --output-format=github || true
+
+      - name: Run tests with coverage
+        working-directory: ./app_python
+        run: |
+          pytest -v --cov=. --cov-report=term --cov-report=lcov
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./app_python/coverage.lcov
+          flag-name: python
+          parallel: false
+
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/devops-info-service
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix={{date 'YYYY.MM.DD'}}-
+      
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./app_python
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security:
+    name: Security Scan with Snyk
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        working-directory: ./app_python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Snyk CLI
+        run: |
+          curl --compressed https://static.snyk.io/cli/latest/snyk-linux -o snyk
+          chmod +x ./snyk
+          sudo mv ./snyk /usr/local/bin/snyk
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Run Snyk to check for vulnerabilities
+        working-directory: ./app_python
+        continue-on-error: true
+        run: |
+          snyk test --severity-threshold=high --file=requirements.txt
