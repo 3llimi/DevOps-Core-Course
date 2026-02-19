@@ -1,0 +1,13 @@
+*.pyc
+venv/
+# Pulumi
+pulumi/venv/
+pulumi/__pycache__/
+Pulumi.dev.yaml
+
+# Vagrant
+.vagrant/
+
+# SSH keys
+*.pem
+*.key
