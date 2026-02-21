@@ -1,3 +1,3 @@
-﻿*.retry
+*.retry
 .vault_pass
 __pycache__/
