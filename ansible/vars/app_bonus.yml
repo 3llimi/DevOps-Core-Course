@@ -1,0 +1,9 @@
+---
+app_name: devops-go
+docker_image: 3llimi/devops-info-service-go
+docker_tag: latest
+app_port: 8001
+app_internal_port: 8080
+compose_project_dir: "/opt/devops-go"
+app_environment:
+  APP_LANG: go
