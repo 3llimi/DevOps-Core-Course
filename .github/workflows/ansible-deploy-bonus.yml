@@ -1,5 +1,5 @@
 ---
-name: "Ansible - Deploy Bonus App"
+name: "Ansible - Deploy Go App"
 
 on:
   push:
