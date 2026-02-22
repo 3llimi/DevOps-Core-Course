@@ -1,9 +1,10 @@
 ---
-# Available tags: docker, docker_install, docker_config
-
 - name: Docker installation block
+  become: true
+  tags:
+    - docker
+    - docker_install
   block:
-
     - name: Create /etc/apt/keyrings directory
       ansible.builtin.file:
         path: /etc/apt/keyrings
@@ -53,16 +54,14 @@
         name: docker
         enabled: true
         state: started
-      ignore_errors: true
+      failed_when: false
 
+- name: Docker configuration block
   become: true
   tags:
     - docker
-    - docker_install
-
-- name: Docker configuration block
+    - docker_config
   block:
-
     - name: Ensure /etc/docker directory exists
       ansible.builtin.file:
         path: /etc/docker
@@ -76,7 +75,7 @@
         mode: "0644"
       notify: Restart Docker
 
-    - name: Add {{ docker_user }} to docker group
+    - name: Add docker user to docker group
       ansible.builtin.user:
         name: "{{ docker_user }}"
         groups: docker
@@ -105,8 +104,3 @@
     - name: "[ALWAYS] Report Docker status"
       ansible.builtin.debug:
         msg: "Docker running: {{ docker_info.rc == 0 }}"
-
-  become: true
-  tags:
-    - docker
-    - docker_config

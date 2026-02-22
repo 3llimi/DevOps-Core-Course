@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  author: vagrant
   role_name: docker
   description: Install and configure Docker CE with Compose plugin
   min_ansible_version: "2.10"

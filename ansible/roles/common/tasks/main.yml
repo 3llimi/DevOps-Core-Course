@@ -1,9 +1,10 @@
 ---
-# Available tags: common, packages, users
-
 - name: Package installation block
+  become: true
+  tags:
+    - packages
+    - common
   block:
-
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
@@ -16,8 +17,9 @@
 
   rescue:
     - name: "[RESCUE] Fix broken apt and retry"
-      ansible.builtin.command: apt-get update --fix-missing
-      changed_when: true
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
 
     - name: "[RESCUE] Retry package installation"
       ansible.builtin.apt:
@@ -34,14 +36,12 @@
           Host: {{ inventory_hostname }}
         mode: "0644"
 
+- name: User management block
   become: true
   tags:
-    - packages
+    - users
     - common
-
-- name: User management block
   block:
-
     - name: Ensure vagrant is in docker group
       ansible.builtin.user:
         name: "{{ docker_user | default('vagrant') }}"
@@ -56,15 +56,10 @@
   always:
     - name: "[ALWAYS] Verify group membership"
       ansible.builtin.command: "id {{ docker_user | default('vagrant') }}"
-      register: id_result
+      register: common_id_result
       changed_when: false
       failed_when: false
 
     - name: "[ALWAYS] Report membership"
       ansible.builtin.debug:
-        msg: "{{ id_result.stdout | default('user not found') }}"
-
-  become: true
-  tags:
-    - users
-    - common
+        msg: "{{ common_id_result.stdout | default('user not found') }}"
