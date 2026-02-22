@@ -1,0 +1,13 @@
+---
+app_name: devops-app
+docker_image: 3llimi/devops-info-service
+docker_tag: latest
+app_port: 8000
+app_internal_port: 8000
+compose_project_dir: "/opt/{{ app_name }}"
+docker_compose_version: "3.8"
+app_environment: {}
+app_secret_key: "change-me-use-vault-in-production"
+
+# Wipe logic - both variable AND tag required to trigger
+web_app_wipe: false

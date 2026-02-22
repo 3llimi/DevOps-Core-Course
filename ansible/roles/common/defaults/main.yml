@@ -7,3 +7,9 @@ common_packages:
   - htop
   - wget
   - unzip
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - apt-transport-https
+
+common_log_path: /tmp/ansible_common_complete.log
