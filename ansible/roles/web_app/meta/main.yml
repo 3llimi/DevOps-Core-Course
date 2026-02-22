@@ -1,8 +1,9 @@
 ---
 galaxy_info:
+  author: vagrant
   role_name: web_app
   description: Deploy a containerised web application via Docker Compose
+  license: MIT
   min_ansible_version: "2.10"
-
 dependencies:
   - role: docker

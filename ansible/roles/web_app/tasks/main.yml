@@ -1,15 +1,15 @@
 ---
-# Available tags: web_app_wipe, app_deploy, compose
-
-# Wipe runs FIRST - enables clean reinstall when -e "web_app_wipe=true" is passed
 - name: Include wipe tasks
   ansible.builtin.include_tasks: wipe.yml
   tags:
     - web_app_wipe
 
 - name: Deploy application with Docker Compose
+  become: true
+  tags:
+    - app_deploy
+    - compose
   block:
-
     - name: Create application directory
       ansible.builtin.file:
         path: "{{ compose_project_dir }}"
@@ -28,21 +28,21 @@
 
     - name: Pull Docker image
       ansible.builtin.command: "docker pull {{ docker_image }}:{{ docker_tag }}"
-      register: pull_result
-      changed_when: "'Pull complete' in pull_result.stdout or 'Downloaded' in pull_result.stdout"
+      register: web_app_pull_result
+      changed_when: "'Pull complete' in web_app_pull_result.stdout or 'Downloaded' in web_app_pull_result.stdout"
 
     - name: Deploy with Docker Compose
       ansible.builtin.command: >
         docker compose -f {{ compose_project_dir }}/docker-compose.yml up --detach --remove-orphans
-      register: compose_up_result
-      changed_when: "'Started' in compose_up_result.stderr or 'Recreated' in compose_up_result.stderr"
+      register: web_app_compose_result
+      changed_when: "'Started' in web_app_compose_result.stderr or 'Recreated' in web_app_compose_result.stderr"
 
     - name: Wait for application to be healthy
       ansible.builtin.uri:
         url: "http://localhost:{{ app_port }}/health"
         status_code: 200
-      register: health_check
-      until: health_check.status == 200
+      register: web_app_health_check
+      until: web_app_health_check.status == 200
       retries: 10
       delay: 5
 
@@ -54,13 +54,13 @@
     - name: "[RESCUE] Show container logs"
       ansible.builtin.command: >
         docker compose -f {{ compose_project_dir }}/docker-compose.yml logs --tail=30
-      register: compose_logs
+      register: web_app_compose_logs
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     - name: "[RESCUE] Print logs"
       ansible.builtin.debug:
-        msg: "{{ compose_logs.stdout_lines | default([]) }}"
+        msg: "{{ web_app_compose_logs.stdout_lines | default([]) }}"
 
     - name: "[RESCUE] Fail with clear message"
       ansible.builtin.fail:
@@ -69,15 +69,10 @@
   always:
     - name: "[ALWAYS] Show running containers"
       ansible.builtin.command: docker ps --format "table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}"
-      register: docker_ps
+      register: web_app_docker_ps
       changed_when: false
       failed_when: false
 
     - name: "[ALWAYS] Report container status"
       ansible.builtin.debug:
-        msg: "{{ docker_ps.stdout_lines }}"
-
-  become: true
-  tags:
-    - app_deploy
-    - compose
+        msg: "{{ web_app_docker_ps.stdout_lines }}"
