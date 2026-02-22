@@ -3,5 +3,6 @@ galaxy_info:
   author: vagrant
   role_name: common
   description: Baseline system packages and user configuration
+  license: MIT
   min_ansible_version: "2.10"
 dependencies: []
