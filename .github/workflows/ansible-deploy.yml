@@ -2,7 +2,7 @@ name: "Ansible - Deploy Python App"
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, lab06]
     paths:
       - 'ansible/**'
       - '!ansible/docs/**'
