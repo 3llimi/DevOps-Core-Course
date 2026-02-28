@@ -1,0 +1,4 @@
+---
+profile: basic
+skip_list:
+  - var-naming  # web_app role uses shared variables intentionally for reusability

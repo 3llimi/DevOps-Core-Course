@@ -1,2 +1,19 @@
 ---
 docker_user: vagrant
+
+docker_apt_key_url: "https://download.docker.com/linux/ubuntu/gpg"
+docker_apt_key_path: "/etc/apt/keyrings/docker.gpg"
+docker_apt_repo: "https://download.docker.com/linux/ubuntu"
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_daemon_config:
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"

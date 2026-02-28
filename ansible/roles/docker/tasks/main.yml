@@ -1,54 +1,106 @@
 ---
-- name: Install prerequisites
-  apt:
-    name:
-      - ca-certificates
-      - curl
-      - gnupg
-    state: present
+- name: Docker installation block
+  become: true
+  tags:
+    - docker
+    - docker_install
+  block:
+    - name: Create /etc/apt/keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
 
-- name: Create keyrings directory
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: "{{ docker_apt_key_url }}"
+        dest: "{{ docker_apt_key_path }}"
+        mode: "0644"
+        force: false
 
-- name: Add Docker GPG key
-  shell: |
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-  args:
-    creates: /etc/apt/keyrings/docker.gpg
+    - name: Add Docker APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by={{ docker_apt_key_path }}] {{ docker_apt_repo }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+        update_cache: true
 
-- name: Add Docker repository
-  apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-    filename: docker
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name: "{{ docker_packages }}"
+        state: present
 
-- name: Install Docker packages
-  apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-    state: present
-    update_cache: yes
-  notify: restart docker
+  rescue:
+    - name: "[RESCUE] Wait 10 seconds before retrying"
+      ansible.builtin.pause:
+        seconds: 10
 
-- name: Ensure Docker service is running and enabled
-  service:
-    name: docker
-    state: started
-    enabled: yes
+    - name: "[RESCUE] Force re-download Docker GPG key"
+      ansible.builtin.get_url:
+        url: "{{ docker_apt_key_url }}"
+        dest: "{{ docker_apt_key_path }}"
+        mode: "0644"
+        force: true
 
-- name: Add user to docker group
-  user:
-    name: "{{ docker_user }}"
-    groups: docker
-    append: yes
+    - name: "[RESCUE] Retry Docker package install"
+      ansible.builtin.apt:
+        name: "{{ docker_packages }}"
+        state: present
+        update_cache: true
 
-- name: Install python3-docker
-  apt:
-    name: python3-docker
-    state: present
+  always:
+    - name: "[ALWAYS] Ensure Docker service is enabled and started"
+      ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
+      failed_when: false
+
+- name: Docker configuration block
+  become: true
+  tags:
+    - docker
+    - docker_config
+  block:
+    - name: Ensure /etc/docker directory exists
+      ansible.builtin.file:
+        path: /etc/docker
+        state: directory
+        mode: "0755"
+
+    - name: Write Docker daemon.json
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: "{{ docker_daemon_config | to_nice_json }}\n"
+        mode: "0644"
+      notify: Restart Docker
+
+    - name: Add docker user to docker group
+      ansible.builtin.user:
+        name: "{{ docker_user }}"
+        groups: docker
+        append: true
+
+    - name: Install Python Docker SDK
+      ansible.builtin.pip:
+        name:
+          - docker
+          - docker-compose
+        state: present
+        executable: pip3
+
+  rescue:
+    - name: "[RESCUE] Log Docker configuration failure"
+      ansible.builtin.debug:
+        msg: "Docker configuration failed - check Docker installation"
+
+  always:
+    - name: "[ALWAYS] Verify Docker is responding"
+      ansible.builtin.command: docker info
+      register: docker_info
+      changed_when: false
+      failed_when: false
+
+    - name: "[ALWAYS] Report Docker status"
+      ansible.builtin.debug:
+        msg: "Docker running: {{ docker_info.rc == 0 }}"

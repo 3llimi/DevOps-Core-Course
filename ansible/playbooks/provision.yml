@@ -1,8 +1,20 @@
 ---
+# Usage:
+#   Full provision:    ansible-playbook playbooks/provision.yml
+#   Only docker:       ansible-playbook playbooks/provision.yml --tags docker
+#   Skip common:       ansible-playbook playbooks/provision.yml --skip-tags common
+#   Packages only:     ansible-playbook playbooks/provision.yml --tags packages
+#   Dry-run:           ansible-playbook playbooks/provision.yml --check
+#   List tags:         ansible-playbook playbooks/provision.yml --list-tags
+
 - name: Provision web servers
   hosts: webservers
-  become: yes
+  become: true
+  gather_facts: true
 
   roles:
-    - common
-    - docker
+    - role: common
+      tags: [common]
+
+    - role: docker
+      tags: [docker]

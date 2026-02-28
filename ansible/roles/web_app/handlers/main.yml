@@ -1,0 +1,6 @@
+---
+- name: Recreate containers
+  ansible.builtin.command: >
+    docker compose -f {{ compose_project_dir }}/docker-compose.yml up --detach --force-recreate
+  changed_when: true
+  become: true

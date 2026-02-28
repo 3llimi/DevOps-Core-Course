@@ -1,10 +1,65 @@
 ---
-- name: Update apt cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
+- name: Package installation block
+  become: true
+  tags:
+    - packages
+    - common
+  block:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
 
-- name: Install common packages
-  apt:
-    name: "{{ common_packages }}"
-    state: present
+    - name: Install common packages
+      ansible.builtin.apt:
+        name: "{{ common_packages }}"
+        state: present
+
+  rescue:
+    - name: "[RESCUE] Fix broken apt and retry"
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+
+    - name: "[RESCUE] Retry package installation"
+      ansible.builtin.apt:
+        name: "{{ common_packages }}"
+        state: present
+        update_cache: true
+
+  always:
+    - name: "[ALWAYS] Write completion marker"
+      ansible.builtin.copy:
+        dest: "{{ common_log_path }}"
+        content: |
+          Ansible common role - packages completed
+          Host: {{ inventory_hostname }}
+        mode: "0644"
+
+- name: User management block
+  become: true
+  tags:
+    - users
+    - common
+  block:
+    - name: Ensure vagrant is in docker group
+      ansible.builtin.user:
+        name: "{{ docker_user | default('vagrant') }}"
+        groups: docker
+        append: true
+
+  rescue:
+    - name: "[RESCUE] Report user management failure"
+      ansible.builtin.debug:
+        msg: "User management failed - docker group may not exist yet"
+
+  always:
+    - name: "[ALWAYS] Verify group membership"
+      ansible.builtin.command: "id {{ docker_user | default('vagrant') }}"
+      register: common_id_result
+      changed_when: false
+      failed_when: false
+
+    - name: "[ALWAYS] Report membership"
+      ansible.builtin.debug:
+        msg: "{{ common_id_result.stdout | default('user not found') }}"
