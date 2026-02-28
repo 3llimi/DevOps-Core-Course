@@ -292,8 +292,9 @@ web_app_wipe: false  # Safe default — never wipes unless explicitly set
       changed_when: true
       failed_when: false      # Safe if image not present locally
 ```
+### Research Answers
 
-### Why Both Variable AND Tag?
+**Q: Why use both variable AND tag?**
 
 Using only the variable: someone accidentally passing `-e "web_app_wipe=true"` while testing another variable would destroy production. The tag requirement forces a second deliberate action — you must explicitly type `--tags web_app_wipe`.
 
@@ -301,7 +302,7 @@ Using only the tag: someone might not realise the tag is destructive. The variab
 
 Together they form a "break glass" mechanism — two independent explicit actions required before anything is deleted.
 
-### Why Not the `never` Tag?
+**Q: What's the difference between `never` tag and this approach?**
 
 The `never` tag is a special Ansible built-in that means "skip unless explicitly requested with `--tags never`". The lab forbids it for two reasons:
 1. Less readable — intent is not obvious from the name
@@ -309,7 +310,7 @@ The `never` tag is a special Ansible built-in that means "skip unless explicitly
 
 The variable + tag approach is more flexible, readable, and pipeline-friendly.
 
-### Why Wipe Before Deploy in main.yml?
+**Q: Why must wipe logic come BEFORE deployment in main.yml?**
 
 Wipe is included before the deployment block to enable the clean reinstall use case:
 ```bash
@@ -317,14 +318,33 @@ ansible-playbook deploy.yml -e "web_app_wipe=true"
 ```
 If deploy came first, the new container would start and then be immediately destroyed. With wipe first: old installation removed → new installation deployed → clean state achieved.
 
+**Q: How would you extend this to wipe Docker images and volumes too?**
+
+Images are already wiped with `docker rmi {{ docker_image }}:{{ docker_tag }}`. To also wipe volumes, add:
+```yaml
+- name: "[WIPE] Remove Docker volumes"
+  ansible.builtin.command: >
+    docker compose -f {{ compose_project_dir }}/docker-compose.yml
+    down --volumes
+  failed_when: false
+```
+This removes named volumes defined in the compose file. For anonymous volumes, `docker volume prune -f` cleans up dangling volumes after containers are removed.
+
+**Q: When would you want clean reinstallation vs. rolling update?**
+
+Clean reinstallation is appropriate when: configuration has changed significantly (environment variables, volume mounts, network settings), the container is in a broken state that `docker compose up` cannot recover from, or during major version upgrades where old state could cause conflicts.
+
+Rolling updates are preferred when: minimising downtime is critical, the change is only a new image version with no config changes, and the app supports multiple instances running simultaneously. Rolling updates avoid the gap between wipe and redeploy where the service is unavailable.
+
 ### Test Results — All 4 Scenarios
 
 **Scenario 1: Normal deploy — wipe must NOT run**
 ```bash
 ansible-playbook playbooks/deploy_python.yml
 # Result: all 5 wipe tasks show "skipping"
-# PLAY RECAP: ok=21  changed=0  failed=0  skipped=5
+# PLAY RECAP: ok=21  changed=1  failed=0  skipped=5
 ```
+![Scenario 1 - Normal Deploy](screenshots/wipe-scenario1-normal-deploy.png)
 
 **Scenario 2: Wipe only**
 ```bash
@@ -338,6 +358,7 @@ ansible-playbook playbooks/deploy_python.yml \
 $ docker ps       # devops-python container absent ✅
 $ ls /opt         # devops-python directory absent ✅
 ```
+![Scenario 2 - Wipe Only](screenshots/wipe-scenario2-wipe-only.png)
 
 **Scenario 3: Clean reinstall**
 ```bash
@@ -348,11 +369,12 @@ ansible-playbook playbooks/deploy_python.yml -e "web_app_wipe=true"
 # TASK [WIPE] Remove application directory → changed
 # TASK Create application directory        → changed
 # TASK Deploy with Docker Compose          → changed
-# PLAY RECAP: ok=26  changed=6  failed=0  ignored=2
+# PLAY RECAP: ok=26  changed=5  failed=0  skipped=0  ignored=0
 
 $ curl http://localhost:8000/health
 {"status":"healthy",...}  ✅
 ```
+![Scenario 3 - Clean Reinstall](screenshots/wipe-scenario3-clean-reinstall.png)
 
 **Scenario 4a: Safety — tag passed but variable false**
 ```bash
@@ -362,6 +384,7 @@ ansible-playbook playbooks/deploy_python.yml --tags web_app_wipe
 # All 5 wipe tasks show "skipping"
 # PLAY RECAP: ok=2  changed=0  skipped=5
 ```
+![Scenario 4a - Safety Check](screenshots/wipe-scenario4a-safety-check.png)
 
 ---
 
@@ -421,6 +444,7 @@ Path filters ensure the workflow only triggers when relevant code changes. Pushi
 Passed: 0 failure(s), 0 warning(s) in 8 files processed of 8 encountered.
 Last profile that met the validation criteria was 'production'.
 ```
+![Python Workflow Success](screenshots/cicd-python-workflow-success.png)
 
 ### Deploy Job Evidence
 
@@ -588,6 +612,10 @@ When `roles/web_app/**` changes, **both workflows fire** — correct behaviour s
 ### Both Workflows Passing
 
 Both `ansible-deploy.yml` and `ansible-deploy-bonus.yml` show green in GitHub Actions with lint and deploy jobs passing independently.
+
+![Independent Workflows](screenshots/cicd-independent-workflows.png)
+![Python Workflow Success](screenshots/cicd-python-workflow-success.png)
+![Go App Workflow Success](screenshots/cicd-bonus-workflow-success.png)
 
 ---
 
