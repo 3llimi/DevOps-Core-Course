@@ -1,1 +1,1 @@
-{"virtualbox":{"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/3llim/OneDrive/Documents/GitHub/DevOps-Core-Course/vagrant","disabled":false,"__vagrantfile":true}}}
+{"virtualbox":{"/devops":{"guestpath":"/devops","hostpath":"C:/Users/3llim/OneDrive/Documents/GitHub/DevOps-Core-Course","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/3llim/OneDrive/Documents/GitHub/DevOps-Core-Course/vagrant","disabled":false,"__vagrantfile":true}}}

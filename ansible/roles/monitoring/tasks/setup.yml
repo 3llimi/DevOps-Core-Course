@@ -1,0 +1,51 @@
+---
+- name: Setup monitoring directories and configuration files
+  become: true
+  tags: [monitoring, monitoring_setup]
+  block:
+    - name: Create monitoring directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ monitoring_dir }}"
+        - "{{ monitoring_dir }}/loki"
+        - "{{ monitoring_dir }}/promtail"
+
+    - name: Template Loki configuration
+      ansible.builtin.template:
+        src: loki-config.yml.j2
+        dest: "{{ monitoring_dir }}/loki/config.yml"
+        mode: "0644"
+      notify: Restart monitoring stack
+
+    - name: Template Promtail configuration
+      ansible.builtin.template:
+        src: promtail-config.yml.j2
+        dest: "{{ monitoring_dir }}/promtail/config.yml"
+        mode: "0644"
+      notify: Restart monitoring stack
+
+    - name: Template Docker Compose file
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ monitoring_dir }}/docker-compose.yml"
+        mode: "0644"
+      notify: Restart monitoring stack
+
+  rescue:
+    - name: Report setup failure
+      ansible.builtin.debug:
+        msg: "Failed to set up monitoring configuration. Check directory permissions."
+
+  always:
+    - name: List monitoring directory
+      ansible.builtin.command: ls -la {{ monitoring_dir }}
+      changed_when: false
+      failed_when: false
+      register: monitoring_dir_contents
+
+    - name: Show monitoring directory contents
+      ansible.builtin.debug:
+        msg: "{{ monitoring_dir_contents.stdout_lines }}"

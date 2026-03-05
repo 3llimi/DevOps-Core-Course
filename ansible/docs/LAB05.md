@@ -2,7 +2,7 @@
 
 ## 1. Architecture Overview
 
-**Ansible Version:** 2.10.8
+**Ansible Version:** 2.17.14
 **Target VM OS:** Ubuntu 22.04 LTS (jammy64)
 **Control Node:** Same VM (Ansible runs on the VM and targets itself via `ansible_connection=local`)
 
@@ -260,7 +260,7 @@ Any secret stored in plain text in a Git repository is effectively public, even 
 ## 7. Challenges
 
 - **WSL2 disk space:** The WSL2 Alpine distro had only 136MB disk space, not enough to install Ansible. Solved by installing Ansible directly on the Vagrant VM and running it against localhost.
-- **Docker login module:** `community.general.docker_login` failed in Ansible 2.10. Solved by using a `shell` task with `docker login --password-stdin` instead.
+- **Docker login module:** `community.general.docker_login` failed. Solved by using a `shell` task with `docker login --password-stdin` instead.
 - **group_vars not loading with become:** Vault-encrypted `group_vars/all.yml` variables were not accessible when `become: yes` was set at the play level. Solved by passing variables explicitly with `-e @group_vars/all.yml` and setting `become: no` in the deploy playbook.
 - **App port:** The application runs on port 8000 (FastAPI/Uvicorn), not 5000 as initially assumed. Discovered via `docker logs` and corrected in the vault variables and port mapping.
 
