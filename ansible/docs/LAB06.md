@@ -622,7 +622,7 @@ Both `ansible-deploy.yml` and `ansible-deploy-bonus.yml` show green in GitHub Ac
 ## Summary
 
 ### Technologies Used
-- Ansible 2.10.8 on Ubuntu 22.04 (Vagrant VM, `ansible_connection=local`)
+- Ansible 2.17.14 on Ubuntu 22.04 (Vagrant VM, `ansible_connection=local`)
 - Docker Compose v2 plugin (`docker compose` not `docker-compose`)
 - GitHub Actions with self-hosted runner on the Vagrant VM
 - Jinja2 templating for docker-compose.yml generation

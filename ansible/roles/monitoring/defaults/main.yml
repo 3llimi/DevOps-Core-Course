@@ -1,0 +1,31 @@
+# Service versions
+loki_version: "3.0.0"
+promtail_version: "3.0.0"
+grafana_version: "12.3.1"
+
+# Ports
+loki_port: 3100
+promtail_port: 9080
+grafana_port: 3000
+
+# Retention
+loki_retention_period: "168h"
+
+# Grafana credentials
+grafana_admin_user: "admin"
+grafana_admin_password: "admin123"
+
+# Deployment directory
+monitoring_dir: "/opt/monitoring"
+
+# Schema
+loki_schema_version: "v13"
+loki_schema_from: "2024-01-01"
+
+# Resource limits
+loki_memory_limit: "1g"
+loki_cpu_limit: "1.0"
+promtail_memory_limit: "256m"
+promtail_cpu_limit: "0.5"
+grafana_memory_limit: "512m"
+grafana_cpu_limit: "1.0"

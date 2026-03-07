@@ -7,51 +7,16 @@ import socket
 import os
 import logging
 import sys
-import json
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log"),
+    ],
+)
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:
-        log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-        for key, value in record.__dict__.items():
-            if key not in (
-                "name",
-                "msg",
-                "args",
-                "levelname",
-                "levelno",
-                "pathname",
-                "filename",
-                "module",
-                "exc_info",
-                "exc_text",
-                "stack_info",
-                "lineno",
-                "funcName",
-                "created",
-                "msecs",
-                "relativeCreated",
-                "thread",
-                "threadName",
-                "processName",
-                "process",
-                "message",
-                "taskName",
-            ):
-                log_entry[key] = value
-        if record.exc_info:
-            log_entry["exception"] = self.formatException(record.exc_info)
-        return json.dumps(log_entry)
-
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(JSONFormatter())
-logging.basicConfig(level=logging.INFO, handlers=[handler])
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -91,7 +56,8 @@ async def log_requests(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
 
     logger.info(
-        f"Request started: {request.method}{request.url.path} from {client_ip}"
+        f"Request started: {request.method} {request.url.path} "
+        f"from {client_ip}"
     )
 
     try:
@@ -101,14 +67,8 @@ async def log_requests(request: Request, call_next):
         ).total_seconds()
 
         logger.info(
-            "Request completed",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-                "client_ip": client_ip,
-                "duration_seconds": round(process_time, 3),
-            },
+            f"Request completed: {request.method} {request.url.path} - "
+            f"Status: {response.status_code} - Duration: {process_time:.3f}s"
         )
 
         response.headers["X-Process-Time"] = str(process_time)
@@ -118,14 +78,8 @@ async def log_requests(request: Request, call_next):
             datetime.now(timezone.utc) - start_time
         ).total_seconds()
         logger.error(
-            "Request failed",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "client_ip": client_ip,
-                "duration_seconds": round(process_time, 3),
-                "error": str(e),
-            },
+            f"Request failed: {request.method} {request.url.path} - "
+            f"Error: {str(e)} - Duration: {process_time:.3f}s"
         )
         raise
 
@@ -193,13 +147,8 @@ async def http_exception_handler(
 ):
     client = request.client.host if request.client else "unknown"
     logger.warning(
-        "HTTP exception",
-        extra={
-            "status_code": exc.status_code,
-            "detail": exc.detail,
-            "path": request.url.path,
-            "client_ip": client,
-        },
+        f"HTTP exception: {exc.status_code} - {exc.detail} - "
+        f"Path: {request.url.path} - Client: {client}"
     )
     return JSONResponse(
         status_code=exc.status_code,
@@ -215,12 +164,8 @@ async def http_exception_handler(
 async def general_exception_handler(request: Request, exc: Exception):
     client = request.client.host if request.client else "unknown"
     logger.error(
-        "Unhandled exception",
-        extra={
-            "exception_type": type(exc).__name__,
-            "path": request.url.path,
-            "client_ip": client,
-        },
+        f"Unhandled exception: {type(exc).__name__} - {str(exc)} - "
+        f"Path: {request.url.path} - Client: {client}",
         exc_info=True,
     )
     return JSONResponse(
