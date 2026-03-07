@@ -1,7 +1,14 @@
 from fastapi import FastAPI, Request
 from datetime import datetime, timezone
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 import platform
 import socket
 import os
@@ -57,6 +64,28 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 START_TIME = datetime.now(timezone.utc)
 
+# ── Prometheus Metrics ───────────────────────────────────────────────────────
+http_requests_total = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status_code"],
+)
+
+http_request_duration_seconds = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "endpoint"],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5],
+)
+
+http_requests_in_progress = Gauge(
+    "http_requests_in_progress", "HTTP requests currently being processed"
+)
+
+devops_info_endpoint_calls = Counter(
+    "devops_info_endpoint_calls_total", "Calls per endpoint", ["endpoint"]
+)
+
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
 
@@ -90,8 +119,12 @@ async def log_requests(request: Request, call_next):
     start_time = datetime.now(timezone.utc)
     client_ip = request.client.host if request.client else "unknown"
 
+    # Normalize endpoint (avoid high cardinality)
+    endpoint = request.url.path
+
+    http_requests_in_progress.inc()
     logger.info(
-        f"Request started: {request.method}{request.url.path} from {client_ip}"
+        f"Request started: {request.method} {endpoint} from {client_ip}"
     )
 
     try:
@@ -100,11 +133,24 @@ async def log_requests(request: Request, call_next):
             datetime.now(timezone.utc) - start_time
         ).total_seconds()
 
+        # Record metrics
+        http_requests_total.labels(
+            method=request.method,
+            endpoint=endpoint,
+            status_code=str(response.status_code),
+        ).inc()
+
+        http_request_duration_seconds.labels(
+            method=request.method, endpoint=endpoint
+        ).observe(process_time)
+
+        devops_info_endpoint_calls.labels(endpoint=endpoint).inc()
+
         logger.info(
             "Request completed",
             extra={
                 "method": request.method,
-                "path": request.url.path,
+                "path": endpoint,
                 "status_code": response.status_code,
                 "client_ip": client_ip,
                 "duration_seconds": round(process_time, 3),
@@ -113,21 +159,32 @@ async def log_requests(request: Request, call_next):
 
         response.headers["X-Process-Time"] = str(process_time)
         return response
+
     except Exception as e:
         process_time = (
             datetime.now(timezone.utc) - start_time
         ).total_seconds()
+        http_requests_total.labels(
+            method=request.method, endpoint=endpoint, status_code="500"
+        ).inc()
         logger.error(
             "Request failed",
             extra={
                 "method": request.method,
-                "path": request.url.path,
+                "path": endpoint,
                 "client_ip": client_ip,
                 "duration_seconds": round(process_time, 3),
                 "error": str(e),
             },
         )
         raise
+    finally:
+        http_requests_in_progress.dec()
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/")
