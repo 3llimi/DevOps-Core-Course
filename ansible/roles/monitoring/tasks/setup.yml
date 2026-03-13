@@ -58,6 +58,13 @@
         mode: "0644"
       notify: Restart monitoring stack
 
+    - name: Copy Grafana logs dashboard JSON
+      ansible.builtin.copy:
+        src: grafana-logs-dashboard.json
+        dest: "{{ monitoring_dir }}/grafana/provisioning/dashboards/grafana-logs-dashboard.json"
+        mode: "0644"
+      notify: Restart monitoring stack
+      
     - name: Copy Grafana dashboard provisioner config
       ansible.builtin.copy:
         src: dashboards-provisioner.yml

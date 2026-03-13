@@ -362,7 +362,8 @@ roles/monitoring/
 ├── meta/main.yml               # Depends on: docker role
 ├── handlers/main.yml           # Restart stack on config change
 ├── files/
-│   ├── app-dashboard.json      # Exported Grafana dashboard
+│   ├── app-dashboard.json           # Metrics dashboard
+│   ├── grafana-logs-dashboard.json  # Logs dashboard
 │   └── dashboards-provisioner.yml
 ├── tasks/
 │   ├── main.yml                # Orchestrates setup + deploy
@@ -447,6 +448,7 @@ TASK [monitoring : Template Docker Compose file]       changed: [localhost]
 TASK [monitoring : Template Prometheus configuration]  changed: [localhost]
 TASK [monitoring : Template Grafana datasources]       changed: [localhost]
 TASK [monitoring : Copy Grafana dashboard JSON]        changed: [localhost]
+TASK [monitoring : Copy Grafana logs dashboard JSON]   changed: [localhost]
 TASK [monitoring : Deploy monitoring stack]            changed: [localhost]
 
 PLAY RECAP
@@ -489,11 +491,6 @@ The running container was using the old image without the metrics endpoint. Fixe
 **Challenge 2: Prometheus image tag `3.9.0` not found**
 Docker Hub uses the `v` prefix for Prometheus tags (`v3.9.0` not `3.9.0`). The Ansible variable was updated to `"v3.9.0"` to match the actual tag.
 
-**Challenge 3: Ansible task indentation in setup.yml and deploy.yml**
-New tasks were appended with incorrect indentation (extra spaces), causing YAML parse errors. Fixed by rewriting both files with consistent 4-space indentation inside the `block:` context.
-
-**Challenge 4: `vagrant ssh` not opening interactive session in PowerShell**
-PowerShell doesn't handle pseudo-TTY allocation the same way bash does. Fixed by using the SSH key directly: `ssh -i <key_path> -p 2222 vagrant@127.0.0.1`.
 
 ---
 
