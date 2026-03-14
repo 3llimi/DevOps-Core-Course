@@ -50,5 +50,5 @@ prometheus_scrape_targets:
     targets: ["grafana:3000"]
     path: "/metrics"
   - job: "app"
-    targets: ["app-python:8000"]
+    targets: ["devops-python:8000:8000"]
     path: "/metrics"

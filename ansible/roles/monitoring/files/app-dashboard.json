@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -77,7 +77,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "up{job=\"app\"}",
@@ -93,7 +93,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -144,7 +144,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "sum by (status_code) (rate(http_requests_total[5m]))",
@@ -159,7 +159,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -242,7 +242,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
@@ -257,7 +257,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -308,7 +308,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "http_requests_in_progress",
@@ -323,7 +323,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -406,7 +406,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "sum(rate(http_requests_total[5m])) by (endpoint)",
@@ -421,7 +421,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "cff932sxwmps0e"
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -504,7 +504,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "cff932sxwmps0e"
+            "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))",
