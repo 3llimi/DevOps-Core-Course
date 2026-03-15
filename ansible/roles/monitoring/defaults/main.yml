@@ -29,3 +29,26 @@ promtail_memory_limit: "256m"
 promtail_cpu_limit: "0.5"
 grafana_memory_limit: "512m"
 grafana_cpu_limit: "1.0"
+
+# Prometheus
+prometheus_version: "v3.9.0"
+prometheus_port: 9090
+prometheus_retention_days: "15d"
+prometheus_retention_size: "10GB"
+prometheus_scrape_interval: "15s"
+prometheus_memory_limit: "1g"
+prometheus_cpu_limit: "1.0"
+
+prometheus_scrape_targets:
+  - job: "prometheus"
+    targets: ["localhost:9090"]
+    path: "/metrics"
+  - job: "loki"
+    targets: ["loki:3100"]
+    path: "/metrics"
+  - job: "grafana"
+    targets: ["grafana:3000"]
+    path: "/metrics"
+  - job: "app"
+    targets: ["devops-python:8000:8000"]
+    path: "/metrics"

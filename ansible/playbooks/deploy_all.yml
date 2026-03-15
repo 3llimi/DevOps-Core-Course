@@ -3,8 +3,11 @@
   hosts: webservers
   become: true
   gather_facts: true
-
   tasks:
+    - name: Deploy Monitoring Stack
+      ansible.builtin.include_role:
+        name: monitoring
+
     - name: Deploy Python App
       ansible.builtin.include_role:
         name: web_app

@@ -28,6 +28,15 @@
       delay: 10
       until: grafana_ready.status == 200
 
+    - name: Wait for Prometheus to be ready
+      ansible.builtin.uri:
+        url: "http://localhost:{{ prometheus_port }}/-/healthy"
+        status_code: 200
+      register: prometheus_ready
+      retries: 12
+      delay: 10
+      until: prometheus_ready.status == 200
+
     - name: Report deployment success
       ansible.builtin.debug:
         msg: "Monitoring stack deployed — Grafana at http://localhost:{{ grafana_port }}"
