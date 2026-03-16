@@ -1,0 +1,13 @@
+DevOps Python Info Service has been deployed!
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+Replicas: {{ .Values.replicaCount }}
+
+To access the service:
+  minikube service {{ include "devops-python.fullname" . }} --url
+
+Then test:
+  curl <URL>/health
+  curl <URL>/

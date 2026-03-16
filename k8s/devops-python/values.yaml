@@ -1,0 +1,39 @@
+replicaCount: 3
+
+image:
+  repository: 3llimi/devops-info-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8000
+  nodePort: 30080
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 3
+
+nameOverride: ""
+fullnameOverride: ""
