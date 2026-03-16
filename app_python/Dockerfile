@@ -19,6 +19,8 @@ COPY app.py .
 # Changing ownership to non-root user
 RUN chown -R appuser:appuser /app
 
+RUN mkdir -p /data && chown -R appuser:appuser /data
+
 # Switch to non-root user
 USER appuser
 

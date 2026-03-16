@@ -15,6 +15,7 @@ import os
 import logging
 import sys
 import json
+import threading
 
 
 class JSONFormatter(logging.Formatter):
@@ -64,7 +65,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 START_TIME = datetime.now(timezone.utc)
 
-# ── Prometheus Metrics ───────────────────────────────────────────────────────
+# ── Prometheus Metrics ───────────────────────────────────────────────
 http_requests_total = Counter(
     "http_requests_total",
     "Total HTTP requests",
@@ -90,6 +91,27 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
 
 logger.info(f"Application starting - Host: {HOST}, Port: {PORT}")
+
+# ── Visits Counter ───────────────────────────────────────────────────
+VISITS_FILE = os.getenv("VISITS_FILE", "/data/visits")
+_visits_lock = threading.Lock()
+
+
+def get_visits() -> int:
+    try:
+        with open(VISITS_FILE, "r") as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def increment_visits() -> int:
+    with _visits_lock:
+        count = get_visits() + 1
+        os.makedirs(os.path.dirname(VISITS_FILE), exist_ok=True)
+        with open(VISITS_FILE, "w") as f:
+            f.write(str(count))
+        return count
 
 
 def get_uptime():
@@ -118,34 +140,25 @@ async def shutdown_event():
 async def log_requests(request: Request, call_next):
     start_time = datetime.now(timezone.utc)
     client_ip = request.client.host if request.client else "unknown"
-
-    # Normalize endpoint (avoid high cardinality)
     endpoint = request.url.path
-
     http_requests_in_progress.inc()
     logger.info(
         f"Request started: {request.method} {endpoint} from {client_ip}"
     )
-
     try:
         response = await call_next(request)
         process_time = (
             datetime.now(timezone.utc) - start_time
         ).total_seconds()
-
-        # Record metrics
         http_requests_total.labels(
             method=request.method,
             endpoint=endpoint,
             status_code=str(response.status_code),
         ).inc()
-
         http_request_duration_seconds.labels(
             method=request.method, endpoint=endpoint
         ).observe(process_time)
-
         devops_info_endpoint_calls.labels(endpoint=endpoint).inc()
-
         logger.info(
             "Request completed",
             extra={
@@ -156,10 +169,8 @@ async def log_requests(request: Request, call_next):
                 "duration_seconds": round(process_time, 3),
             },
         )
-
         response.headers["X-Process-Time"] = str(process_time)
         return response
-
     except Exception as e:
         process_time = (
             datetime.now(timezone.utc) - start_time
@@ -191,6 +202,7 @@ def metrics():
 def home(request: Request):
     logger.debug("Home endpoint called")
     uptime = get_uptime()
+    visits = increment_visits()
     return {
         "service": {
             "name": "devops-info-service",
@@ -218,18 +230,22 @@ def home(request: Request):
             "method": request.method,
             "path": request.url.path,
         },
+        "visits": visits,
         "endpoints": [
-            {
-                "path": "/",
-                "method": "GET",
-                "description": "Service information",
-            },
-            {
-                "path": "/health",
-                "method": "GET",
-                "description": "Health check",
-            },
+            {"path": "/", "method": "GET", "description": "Service information"},
+            {"path": "/health", "method": "GET", "description": "Health check"},
+            {"path": "/visits", "method": "GET", "description": "Visit counter"},
         ],
+    }
+
+
+@app.get("/visits")
+def visits_endpoint():
+    logger.debug("Visits endpoint called")
+    count = get_visits()
+    return {
+        "visits": count,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

@@ -3,7 +3,7 @@ replicaCount: 3
 image:
   repository: 3llimi/devops-info-service
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 service:
   type: NodePort
@@ -43,3 +43,8 @@ fullnameOverride: ""
 
 appEnv: "production"
 logLevel: "INFO"
+
+persistence:
+  enabled: true
+  size: 100Mi
+  storageClass: ""
