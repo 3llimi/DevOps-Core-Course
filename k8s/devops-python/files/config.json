@@ -1,0 +1,14 @@
+{
+  "app_name": "devops-info-service",
+  "environment": "production",
+  "version": "1.0.0",
+  "features": {
+    "visits_counter": true,
+    "metrics_enabled": true,
+    "json_logging": true
+  },
+  "settings": {
+    "log_level": "INFO",
+    "max_visits_file_size": "1MB"
+  }
+}

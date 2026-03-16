@@ -28,6 +28,7 @@ spec:
           PASSWORD={{ "{{" }} .Data.data.password {{ "}}" }}
           APP_ENV=production
           {{ "{{" }}- end -{{ "}}" }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -37,6 +38,8 @@ spec:
         envFrom:
           - secretRef:
               name: {{ include "common.fullname" . }}-secret
+          - configMapRef:
+              name: {{ include "common.fullname" . }}-env
         ports:
         - containerPort: {{ .Values.service.targetPort }}
         resources:
@@ -45,3 +48,15 @@ spec:
           {{- toYaml .Values.livenessProbe | nindent 10 }}
         readinessProbe:
           {{- toYaml .Values.readinessProbe | nindent 10 }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+        - name: data-volume
+          mountPath: /data
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "common.fullname" . }}-config
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: {{ include "common.fullname" . }}-data
