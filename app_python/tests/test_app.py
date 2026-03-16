@@ -1,5 +1,3 @@
-from fastapi.testclient import TestClient
-from app import app
 import os
 import tempfile
 
@@ -7,6 +5,8 @@ _tmp = tempfile.NamedTemporaryFile(delete=False)
 _tmp.close()
 os.environ["VISITS_FILE"] = _tmp.name
 
+from fastapi.testclient import TestClient
+from app import app
 
 client = TestClient(app)
 
