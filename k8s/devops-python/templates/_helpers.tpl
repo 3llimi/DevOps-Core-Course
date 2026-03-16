@@ -58,3 +58,13 @@ To access the service:
 Then test:
   curl <URL>/health
   curl <URL>/
+{{/*
+Common environment variables
+*/}}
+{{- define "devops-python.envVars" -}}
+env:
+  - name: APP_ENV
+    value: {{ .Values.appEnv | default "production" }}
+  - name: LOG_LEVEL
+    value: {{ .Values.logLevel | default "INFO" }}
+{{- end -}}

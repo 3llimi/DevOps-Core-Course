@@ -35,5 +35,11 @@ readinessProbe:
   periodSeconds: 5
   failureThreshold: 3
 
+secret:
+  username: "app-user"
+  password: "changeme"
 nameOverride: ""
 fullnameOverride: ""
+
+appEnv: "production"
+logLevel: "INFO"

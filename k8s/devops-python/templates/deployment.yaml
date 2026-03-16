@@ -18,11 +18,25 @@ spec:
     metadata:
       labels:
         {{- include "common.selectorLabels" . | nindent 8 }}
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "devops-python"
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/devops-python/config"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{ "{{" }}- with secret "secret/data/devops-python/config" -{{ "}}" }}
+          USERNAME={{ "{{" }} .Data.data.username {{ "}}" }}
+          PASSWORD={{ "{{" }} .Data.data.password {{ "}}" }}
+          APP_ENV=production
+          {{ "{{" }}- end -{{ "}}" }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- include "devops-python.envVars" . | nindent 8 }}
+        envFrom:
+          - secretRef:
+              name: {{ include "common.fullname" . }}-secret
         ports:
         - containerPort: {{ .Values.service.targetPort }}
         resources:
