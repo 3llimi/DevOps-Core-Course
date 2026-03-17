@@ -127,11 +127,37 @@ Environment pods:
 
 ## 7. Screenshots to Include
 
-Add these screenshots to your submission:
-1. ArgoCD Applications list showing all 3 apps
-2. Application details page (source/destination/sync policy)
-3. Dev app auto-sync/self-heal evidence
-4. Dev vs prod namespace workloads (`kubectl get pods -n dev/prod`)
+### ArgoCD Applications List and Status
+
+![ArgoCD UI](docs/screenshots/ArgoUI.png)
+
+### Dev Environment Application Details
+
+![Dev Application Details](docs/screenshots/devops-python-dev.png)
+
+### Prod Environment Application Details
+
+![Prod Application Details](docs/screenshots/devops-python-prod.png)
+
+### Terminal Evidence (Namespace Workloads)
+
+```powershell
+PS C:\Users\3llim\OneDrive\Documents\GitHub\DevOps-Core-Course> kubectl get pods -n dev
+NAME                                                 READY   STATUS      RESTARTS   AGE
+devops-python-dev-devops-python-597b445c66-7mj86     1/1     Running     0          52m
+devops-python-dev-devops-python-post-install-d9dt7   0/1     Completed   0          55m
+devops-python-dev-devops-python-pre-install-fvmzj    0/1     Completed   0          56m
+
+PS C:\Users\3llim\OneDrive\Documents\GitHub\DevOps-Core-Course> kubectl get pods -n prod
+NAME                                                  READY   STATUS      RESTARTS   AGE
+devops-python-prod-devops-python-6bc4889d75-6w9pd     1/1     Running     0          61m
+devops-python-prod-devops-python-6bc4889d75-g2hl9     1/1     Running     0          61m
+devops-python-prod-devops-python-6bc4889d75-lzkf2     1/1     Running     0          61m
+devops-python-prod-devops-python-6bc4889d75-qt5ss     1/1     Running     0          61m
+devops-python-prod-devops-python-6bc4889d75-tn4fg     1/1     Running     0          61m
+devops-python-prod-devops-python-post-install-tfdbp   0/1     Completed   0          59m
+devops-python-prod-devops-python-pre-install-v569v    0/1     Completed   0          59m
+```
 
 ## Bonus - ApplicationSet
 
