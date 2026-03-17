@@ -125,7 +125,7 @@ Environment pods:
 - `prod`: running with prod profile
 - `default`: running with default profile
 
-## 7. Screenshots to Include
+## 7. Screenshots
 
 ### ArgoCD Applications List and Status
 
