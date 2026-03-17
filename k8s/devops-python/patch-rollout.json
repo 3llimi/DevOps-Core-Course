@@ -1,0 +1,11 @@
+{
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "lab14-trigger": "run-20260317064537"
+        }
+      }
+    }
+  }
+}

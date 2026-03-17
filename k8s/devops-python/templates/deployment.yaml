@@ -1,3 +1,4 @@
+{{- if .Values.deployment.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -60,3 +61,4 @@ spec:
       - name: data-volume
         persistentVolumeClaim:
           claimName: {{ include "common.fullname" . }}-data
+{{- end }}
