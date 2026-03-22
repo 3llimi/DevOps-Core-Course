@@ -6,7 +6,7 @@ image:
   pullPolicy: Always
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 80
   targetPort: 8000
   nodePort: 30080
@@ -48,3 +48,12 @@ persistence:
   enabled: true
   size: 100Mi
   storageClass: ""
+
+deployment:
+  enabled: false
+
+rollout:
+  strategy: canary   # canary | blueGreen
+  blueGreen:
+    autoPromotionEnabled: false
+    autoPromotionSeconds: null

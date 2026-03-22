@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "devops-python.fullname" . }}-success-rate
+  labels:
+    {{- include "devops-python.labels" . | nindent 4 }}
+spec:
+  metrics:
+    - name: health-check
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      provider:
+        web:
+          # checks active service health endpoint
+          url: http://{{ include "devops-python.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local/health
+          timeoutSeconds: 5
+          jsonPath: "{$.status}"
+      successCondition: result == "ok"
