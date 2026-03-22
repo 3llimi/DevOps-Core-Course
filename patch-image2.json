@@ -1,0 +1,1 @@
+﻿{"spec":{"template":{"spec":{"containers":[{"name":"devops-python","image":"3llimi/devops-info-service:latest"}]}}}}

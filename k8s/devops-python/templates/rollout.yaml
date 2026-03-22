@@ -1,3 +1,4 @@
+{{- if not .Values.statefulset.enabled }}
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
@@ -81,3 +82,4 @@ spec:
             duration: 30s
         - setWeight: 100
     {{- end }}
+{{- end }}
