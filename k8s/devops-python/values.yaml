@@ -57,3 +57,5 @@ rollout:
   blueGreen:
     autoPromotionEnabled: false
     autoPromotionSeconds: null
+statefulset:
+  enabled: true
