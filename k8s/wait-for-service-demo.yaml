@@ -1,0 +1,13 @@
+﻿apiVersion: v1
+kind: Pod
+metadata:
+  name: wait-for-service-demo
+spec:
+  initContainers:
+  - name: wait-for-service
+    image: busybox:1.36
+    command: ['sh', '-c', 'until nslookup devops-python-devops-python.default.svc.cluster.local; do echo "Waiting for service..."; sleep 2; done; echo "Service is ready!"']
+  containers:
+  - name: main-app
+    image: busybox:1.36
+    command: ['sh', '-c', 'echo "Dependency is ready, starting main app!" && sleep 3600']
