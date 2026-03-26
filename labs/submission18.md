@@ -50,7 +50,6 @@ let
     starlette
     python-dotenv
     prometheus-client
-    annotated-doc
   ]);
 
   cleanSrc = pkgs.lib.cleanSourceWith {
@@ -262,8 +261,8 @@ Traditional Dockerfiles are practical but usually not bit-for-bit reproducible b
 1. **Script execution issue (`from: command not found`)**  
    Fixed by wrapping app with explicit Python interpreter via `makeWrapper`.
 
-2. **Missing module (`annotated_doc`)**  
-   Fixed by adding `annotated-doc` to Python environment.
+2. **Missing package in pinned nixpkgs (`annotated-doc`)**  
+   Resolved by removing `annotated-doc` from `default.nix` dependency list to match available packages in locked nixpkgs.
 
 3. **Changing store paths across rebuilds**  
    Fixed with `cleanSourceWith` to remove mutable files from build input.
@@ -278,3 +277,65 @@ Traditional Dockerfiles are practical but usually not bit-for-bit reproducible b
 Using Nix from the start (Lab 1/2) would have improved consistency, reduced environment drift, and made CI/CD artifacts more deterministic and auditable. Docker remains useful for runtime packaging; Nix strengthens reproducible builds.
 
 ---
+
+## 5) Bonus Task — Modern Nix with Flakes (2 pts)
+
+### 5.1 Flake setup
+
+I added modern Nix Flakes support for the Lab 18 Python app:
+
+- `labs/lab18/app_python/flake.nix`
+- `labs/lab18/app_python/flake.lock`
+
+The flake defines:
+- `packages.x86_64-linux.default` → app package from `default.nix`
+- `packages.x86_64-linux.dockerImage` → image build from `docker.nix`
+- `devShells.x86_64-linux.default` → reproducible shell with Python 3.13
+
+### 5.2 Flake lock / pinning evidence
+
+I generated the lock file with:
+
+```bash
+cd labs/lab18/app_python
+nix flake update
+```
+
+Observed output:
+- Added input `nixpkgs`
+- Locked revision: `github:NixOS/nixpkgs/50ab793` (2025-06-30)
+
+This provides stronger reproducibility because dependency source is pinned in `flake.lock`.
+
+### 5.3 Build evidence using Flakes
+
+Commands executed:
+
+```bash
+nix build
+readlink result
+
+nix build .#dockerImage
+readlink result
+
+nix develop -c python --version
+nix flake check
+```
+
+Observed outputs:
+- App build output:  
+  `/nix/store/zrxwmif48w8hccc60fmclv7vr1hfgnlx-devops-info-service-1.0.0`
+- Docker image build output:  
+  `/nix/store/3pqfdzi91x4ns4br6cyvc8bw99ic8sb6-devops-info-service-nix.tar.gz`
+- Dev shell Python version:  
+  `Python 3.13.1`
+- `nix flake check`: passed for default package, dockerImage, and devShell.
+
+### 5.4 Comparison with Lab 10 Helm pinning
+
+From Lab 10, Helm `values.yaml` typically pins image tag only.  
+Nix Flakes pin dependency source revision and lock metadata in `flake.lock`, providing stronger guarantees for reproducible builds over time.
+
+### 5.5 Bonus reflection
+
+Flakes improved reproducibility and collaboration by locking dependency inputs explicitly. Compared with traditional dependency flows, `flake.lock` reduces “works on my machine” drift across environments and time.

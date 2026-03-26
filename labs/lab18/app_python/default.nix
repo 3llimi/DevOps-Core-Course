@@ -8,7 +8,6 @@ let
     starlette
     python-dotenv
     prometheus-client
-    annotated-doc
   ]);
 
   cleanSrc = pkgs.lib.cleanSourceWith {
