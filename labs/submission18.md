@@ -21,7 +21,7 @@ Observed:
 - `nix (Determinate Nix 3.17.1) 2.33.3`
 - `Hello, world!`
 
-![Nix install and verification](../docs/screenshots/S18-01-nix-install-verify.png)
+![Nix install and verification](../labs/lab18/app_python/docs/screenshots/S18-01-nix-install-verify.png)
 
 ---
 
@@ -120,7 +120,7 @@ Example response:
 {"status":"healthy","timestamp":"2026-03-26T05:21:29.528356+00:00","uptime_seconds":20}
 ```
 
-![Task1 app running from nix build](../docs/screenshots/S18-02-task1-nix-run.png)
+![Task1 app running from nix build](../labs/lab18/app_python/docs/screenshots/S18-02-task1-nix-run.png)
 
 ---
 
@@ -148,7 +148,7 @@ nix-hash --type sha256 result
 Observed:
 - `d4ad3501ab1afad0104576d6e84704971daac215df5e643d7e86927e44235658`
 
-![Task1 reproducibility proof](../docs/screenshots/S18-03-task1-reproducible-storepath.png)
+![Task1 reproducibility proof](../labs/lab18/app_python/docs/screenshots/S18-03-task1-reproducible-storepath.png)
 
 ---
 
@@ -221,7 +221,7 @@ docker images | findstr devops-info-service-nix
 Observed:
 - `Loaded image: devops-info-service-nix:1.0.0`
 
-![Task2 nix docker build and load](../docs/screenshots/S18-04-task2-nix-docker-build-load.png)
+![Task2 nix docker build and load](../labs/lab18/app_python/docs/screenshots/S18-04-task2-nix-docker-build-load.png)
 
 ---
 
@@ -240,7 +240,7 @@ docker ps
 
 Both health checks returned successful JSON and both containers were running.
 
-![Task2 both containers healthy](../docs/screenshots/S18-05-task2-both-containers-health.png)
+![Task2 both containers healthy](../labs/lab18/app_python/docs/screenshots/S18-05-task2-both-containers-health.png)
 
 ---
 
